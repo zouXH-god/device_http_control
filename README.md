@@ -19,8 +19,8 @@
 device_http_control 采用Go语言开发，利用`net/http`构建高性能服务器，结合`os/exec`实现系统命令调用，并通过`robotgo`库模拟键盘事件，完成多媒体与音量控制。服务内置HTTP基本认证机制，确保操作安全性。配置文件采用JSON格式，灵活定义快速启动程序列表，支持动态扩展。
 
 ## 部署与使用：
-1. 下载二进制文件，解压到目标目录。
-2. 创建并配置`config.json`，文件路径为`./config.json`，实例可参考`config.json`。
+1. 下载 [二进制文件](https://github.com/zouXH-god/device_http_control/releases) 到目录中。
+2. 在目录下创建并配置`config.json`，文件路径为`./config.json`，实例可参考`config.json`。
 3. 启动服务，默认运行于`0.0.0.0:8080`。
 4. 通过HTTP客户端（如Postman或`curl`）发送请求，调用所需功能。
 
