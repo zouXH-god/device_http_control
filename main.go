@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/getlantern/systray"
 	"github.com/go-vgo/robotgo"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -140,8 +144,68 @@ func launchHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "未找到指定程序", http.StatusNotFound)
 }
 
+func onReady() {
+	// 设置任务栏图标
+	icoPath := "app.ico" // 替换为你的图标路径
+	absPath, err := filepath.Abs(icoPath)
+	if err != nil {
+		fmt.Println("无法加载图标:", err)
+		return
+	}
+	iconData, err := os.ReadFile(absPath)
+	if err != nil {
+		fmt.Println("无法读取图标文件:", err)
+		return
+	}
+	systray.SetIcon(iconData)
+
+	// 设置托盘标题和提示
+	systray.SetTitle("deviceHttpControl")
+	systray.SetTooltip("程序运行中")
+
+	// 添加菜单项：退出
+	mQuit := systray.AddMenuItem("退出", "退出程序")
+	go func() {
+		for range mQuit.ClickedCh {
+			systray.Quit()
+			os.Exit(0)
+		}
+	}()
+
+	openConfig := systray.AddMenuItem("设置", "打开配置文件")
+	go func() {
+		for range openConfig.ClickedCh {
+			exePath, err := os.Getwd()
+			if err != nil {
+				log.Println("无法获取可执行文件路径:", err)
+				return
+			}
+
+			exec.Command("cmd", "/c", "start", path.Join(exePath, configFilePath)).Start()
+		}
+	}()
+
+	resetConfig := systray.AddMenuItem("重载", "重新加载配置文件")
+	go func() {
+		for range resetConfig.ClickedCh {
+			loadConfig()
+		}
+	}()
+}
+func onExit() {
+	// 程序退出时的清理逻辑
+	fmt.Println("程序已退出")
+}
+
 func main() {
 	loadConfig()
+	// 在程序退出时清理系统托盘
+	defer systray.Quit()
+
+	// 启动系统托盘
+	go func() {
+		systray.Run(onReady, onExit)
+	}()
 	// 设置HTTP路由并添加认证
 	http.HandleFunc("/play_pause", authHandler(playPauseHandler))
 	http.HandleFunc("/previous", authHandler(previousHandler))
